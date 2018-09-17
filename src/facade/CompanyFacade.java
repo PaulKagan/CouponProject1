@@ -15,6 +15,11 @@ public class CompanyFacade implements CouponClientFacade {
 	private CouponDBDAO coupDBDAO;
 	Company company;
 	
+	/**
+	 * Constructor for the company facade.
+	 * 
+	 * @param comp is the company the facade associated with.
+	 */
 	public CompanyFacade(Company comp){
 		compDBDAO = new CompanyDBDAO();
 		coupDBDAO = new CouponDBDAO();
@@ -23,15 +28,28 @@ public class CompanyFacade implements CouponClientFacade {
 	}
 
 	
-	
+	/**
+	 * Creates a new coupon for the company in the database coupon and company-coupon tables.
+	 * Only if the title isn't different
+	 * @param coup is the coupon to be added.
+	 * @throws CouponSystemException if there were issues during method runtime or if the name was already taken.
+	 */
 	public void createCoupon(Coupon coup) throws CouponSystemException {
 		if(coupDBDAO.getCouponByTitle(coup.getTitle())==null){
 			coupDBDAO.createCoupon(coup);
 			compDBDAO.addToCompanyCoupon(company, coup);
+		}else {
+			throw new CouponSystemException("Coupon title is already taken.");
 		}
 		
 	}
 	
+	/**
+	 * Removes a coupon of the company from the database coupon, customer-coupon and company-coupon tables.
+	 * 
+	 * @param coup is the coupon to be removed.
+	 * @throws CouponSystemException if there were issues during method runtime.
+	 */
 	public void removeCoupon(Coupon coup) throws CouponSystemException {
 		coupDBDAO.removeCustomerCoupon(coup);
 		coupDBDAO.removeCompanyCoupon(coup);
@@ -39,6 +57,13 @@ public class CompanyFacade implements CouponClientFacade {
 		
 	}
 	
+	/**
+	 * Updates the coupon of the company in the database coupon table.
+	 * Only if the title, start date, amount, type, message and image weren't touched.
+	 *   
+	 * @param coup is the coupon that is to be updated.
+	 * @throws CouponSystemException if there were issues during method runtime or the conditions for the update weren't met.
+	 */
 	public void updateCoupon(Coupon coup) throws CouponSystemException {
 		Coupon c = coupDBDAO.getCoupon(coup.getId());
 		if(c.getTitle().equals(coup.getTitle()) && c.getStartDate().toLocalDate().compareTo(coup.getStartDate().toLocalDate()) == 0
@@ -52,13 +77,32 @@ public class CompanyFacade implements CouponClientFacade {
 		
 	}
 	
+	/**
+	 * Retrieves the company details.
+	 * 
+	 * @return the company the facade is associated with.
+	 * @throws CouponSystemException if there were issues during method runtime.
+	 */
 	public Company getCopanyDetails() throws CouponSystemException {
 		return company;
 	}
+	
+	/**
+	 * Retrieves all the coupons the company owns.
+	 * @return list of all the coupons the company owns.
+	 * @throws CouponSystemException if there were issues during method runtime.
+	 */
 	public ArrayList<Coupon> getCompanyCoupons() throws CouponSystemException{
 		return compDBDAO.getCoupons(company);
 	}
 	
+	/**
+	 * Retrieves all the coupons the company owns by the parameters that were requested.
+	 * 
+	 * @param param the parameters that were requested.
+	 * @return list of all the coupons the company owns matching the parameters.
+	 * @throws CouponSystemException if there were issues during method runtime.
+	 */
 	public ArrayList<Coupon> getAllCouponsByParameters(Object... param) throws CouponSystemException {
 		String title = null;
 		Date startDate = null;

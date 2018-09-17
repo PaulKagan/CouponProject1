@@ -8,12 +8,21 @@ import exceptions.CouponSystemException;
 public interface CouponClientFacade {
 	
 	
-	
+	/**
+	 * The types of clients that exist in the CouponSystem.
+	 */
 	static public enum ClientType {
 		Admin, Customer, Company
 	}
 
-	
+	/**
+	 * This method is used by client to log into the CouponSystem.
+	 * 
+	 * @param name is the user name.
+	 * @param password is the password.
+	 * @param clientType is the client type.
+	 * @throws CouponSystemException if the login details are incorrect.
+	 */
 	public static CouponClientFacade login(String name, String password, ClientType clientType)
 			throws CouponSystemException {
 
