@@ -9,6 +9,7 @@ import beans.Customer;
 import dataBaseDAO.CouponDBDAO;
 import dataBaseDAO.CustomerDBDAO;
 import exceptions.CouponSystemException;
+import exceptions.FacadeException;
 
 public class CustomerFacade implements CouponClientFacade {
 
@@ -20,8 +21,9 @@ public class CustomerFacade implements CouponClientFacade {
 	 * Constructor for the customer facade.
 	 * 
 	 * @param cust is the customer the facade associated with.
+	 * @throws CouponSystemException if there were issues during the data access objects creation.
 	 */
-	public CustomerFacade(Customer cust) {
+	public CustomerFacade(Customer cust) throws CouponSystemException {
 
 		custDBDAO = new CustomerDBDAO();
 		coupDBDAO = new CouponDBDAO();
@@ -42,10 +44,10 @@ public class CustomerFacade implements CouponClientFacade {
 				coup.setAmount(coup.getAmount() - 1);
 				coupDBDAO.updateCoupon(coup);
 			} else {
-				throw new CouponSystemException("Error: Cannot purchase this coupon.");
+				throw new FacadeException("Error: Cannot purchase this coupon.");
 			}
 		} else {
-			throw new CouponSystemException("Error: Cannot purchase this coupon again.");
+			throw new FacadeException("Error: Cannot purchase this coupon again.");
 		}
 
 	}
@@ -60,25 +62,6 @@ public class CustomerFacade implements CouponClientFacade {
 		return custDBDAO.getCoupons(customer);
 	}
 
-	/**
-	 * Retrieves all the owned coupons by the customer by type.
-	 * @param coupType the type the method will search by.
-	 * @return a list of all the owned coupons by the customer that match the type.
-	 * @throws CouponSystemException  if there were issues during method runtime.
-	 */
-	public ArrayList<Coupon> getAllPurchasedCouponByType(CouponType coupType) throws CouponSystemException {
-		return coupDBDAO.getAllCouponsByParameters(customer, null, null, null, -1, coupType, -1d);
-	}
-
-	/**
-	 * Retrieves all the owned coupons by the customer by price.
-	 * @param price the type the method will search by.
-	 * @return a list of all the owned coupons by the customer that match the price.
-	 * @throws CouponSystemException  if there were issues during method runtime.
-	 */
-	public ArrayList<Coupon> getAllPurchasedCouponByPrice(double price) throws CouponSystemException {
-		return coupDBDAO.getAllCouponsByParameters(customer, null, null, null, -1, null, price);
-	}
 	
 	/**
 	 * Retrieves all the coupons the customer owns by the parameters that were requested.
@@ -120,7 +103,7 @@ public class CustomerFacade implements CouponClientFacade {
 		}
 		
 		
-		return coupDBDAO.getAllCouponsByParameters(customer, title, startDate, endDate, amount, type, price);
+		return coupDBDAO.getAllOwnedCouponsByParameters(customer, title, startDate, endDate, amount, type, price);
 	}
 	
 	/**
@@ -179,7 +162,7 @@ public class CustomerFacade implements CouponClientFacade {
 			}	
 		}
 		ArrayList<Coupon> notPurchasedCoupons = new ArrayList<Coupon>();
-		ArrayList<Coupon> allCouponsByParameters = coupDBDAO.getAllCouponsByParameters(customer, title, startDate, endDate, amount, type, price);
+		ArrayList<Coupon> allCouponsByParameters = coupDBDAO.getAllCouponsByParameters(title, startDate, endDate, amount, type, price);
 		ArrayList<Coupon> customerCoupons = custDBDAO.getCoupons(customer);
 		
 		for (Coupon coupon : allCouponsByParameters) {

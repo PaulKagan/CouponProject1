@@ -3,7 +3,6 @@ package dataAccessObject;
 import java.util.ArrayList;
 
 import beans.Coupon;
-import beans.CouponType;
 import exceptions.CouponSystemException;
 
 public interface CouponDAO {
@@ -54,14 +53,5 @@ public interface CouponDAO {
 	 */
 	public ArrayList<Coupon> getAllCoupons() throws CouponSystemException;
 
-	/**
-	 * Retrieving the details of all the coupons from the database coupon table by coupon type.
-	 * 
-	 * @param type is the type the method will search for coupons by.
-	 * @return array list of all the existing coupons found by the coupon type.
-	 * @throws CouponSystemException if there were issues during method runtime.
-	 * 
-	 */
-	public ArrayList<Coupon> getCouponsByType(CouponType type) throws CouponSystemException;
 
 }

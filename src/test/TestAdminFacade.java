@@ -1,5 +1,7 @@
 package test;
 
+import java.util.ArrayList;
+
 import beans.Company;
 import beans.Customer;
 import couponSystem.CouponSystem;
@@ -12,8 +14,14 @@ public class TestAdminFacade {
 
 	public static void main(String[] args) {
 		
-		CouponSystem coupSys = CouponSystem.getInstance();
+		CouponSystem coupSys = null;
 		AdminFacade admin = null;
+		
+		try {
+			coupSys = CouponSystem.getInstance();
+		} catch (CouponSystemException e) {
+			System.out.println("Faild to create the coupon system"  + e.getMessage());
+		}
 		
 		System.out.println("---------Check Log in function.----------");
 		System.out.println();
@@ -26,16 +34,20 @@ public class TestAdminFacade {
 			admin = (AdminFacade) coupSys.login("admin", "1234", ClientType.Admin);
 			System.out.println("Successful log in.");
 		} catch (CouponSystemException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			System.out.println("faild to log in (shouldn't happen)." + e.getMessage());
+			
 		}
 		
+		System.out.println();
+		System.out.println();
+		System.out.println("---------------------------------------------------------------------------------------");
+		System.out.println("---------------COMPANY RELATED FUNCTIONS----------------------");
 		
 		// testing company related methods.
-		Company comp = new Company(1, "a", "aa", "a@mail.com");
-		Company comp2 = new Company(2, "b", "bb", "b@mail.com");
-		Company comp3 = new Company(3, "c", "cc", "c@mail.com");
-		Company comp4 = new Company(4, "c", "cc", "c@mail.com");
+		Company comp = new Company("a", "aa", "a@mail.com");
+		Company comp2 = new Company("b", "bb", "b@mail.com");
+		Company comp3 = new Company("c", "cc", "c@mail.com");
+		Company comp4 = new Company("c", "cc", "c@mail.com");
 		
 		
 		System.out.println();
@@ -44,6 +56,7 @@ public class TestAdminFacade {
 			admin.createCompany(comp);
 			admin.createCompany(comp2);
 			admin.createCompany(comp3);
+			System.out.println("comp to comp 3 were created successfully.");
 		} catch (CouponSystemException e) {
 			System.out.println("faild to create company 1 to 3" + e.getMessage());
 		}
@@ -55,9 +68,9 @@ public class TestAdminFacade {
 		}
 		
 		try {
-			System.out.println(admin.getCompany(1));
+			System.out.println(admin.getCompany(comp.getId()));
 		} catch (CouponSystemException e) {
-			System.out.println("faild to get compane 1. " + e.getMessage());
+			System.out.println("faild to get comp. " + e.getMessage());
 		}
 		
 		try {
@@ -75,7 +88,7 @@ public class TestAdminFacade {
 		}
 		try {
 			System.out.println("Must get null cause searching for comp3, which was deleted.");
-			System.out.println(admin.getCompany(3));
+			System.out.println(admin.getCompany(comp3.getId()));
 		} catch (CouponSystemException e) {
 			System.out.println("faild to find the removed company(comp3). " + e.getMessage());
 		}
@@ -90,10 +103,9 @@ public class TestAdminFacade {
 			System.out.println("faild to update company(comp). " + e.getMessage());
 		}
 		try {
-			System.out.println(admin.getCompany(1));
-		} catch (CouponSystemException e2) {
-			// TODO Auto-generated catch block
-			e2.printStackTrace();
+			System.out.println(admin.getCompany(comp.getId()));
+		} catch (CouponSystemException e) {
+			System.out.println("faild to get company(comp). " + e.getMessage());	
 		}
 
 		System.out.println("Updating 'comp2' name from 'b' to 'a'.");
@@ -105,11 +117,12 @@ public class TestAdminFacade {
 		}
 		 
 		 try {
-			System.out.println(admin.getCompany(2));
+			System.out.println(admin.getCompany(comp2.getId()));
 		} catch (CouponSystemException e) {
 			System.out.println("faild to get 'comp2'. " + e.getMessage());
 		}
-		 
+		 System.out.println();
+		 System.out.println("Seeing the final result.");
 		 try {
 			System.out.println(admin.getAllCompanies());//to see the final result.
 		} catch (CouponSystemException e) {
@@ -117,24 +130,29 @@ public class TestAdminFacade {
 			
 		}
 		 System.out.println();
-		 System.out.println("---------Cleaning the Company table with the Remove function for future testing.----------");
+		 System.out.println("---------Cleaning the Company table with the Remove companies function.----------");
 		 
 		 try {
-			admin.removeCompany(comp);
-			admin.removeCompany(comp2);
-			admin.removeCompany(comp3);
-			admin.removeCompany(comp4);
-		} catch (CouponSystemException e1) {
-			System.out.println("faild to clean companies after test.");
+			 ArrayList<Company> companies = new ArrayList<Company>();
+			 companies.add(comp);
+			 companies.add(comp2);
+			admin.removeCompanies(companies);
+			System.out.println(admin.getAllCompanies());
+			System.out.println("Company table cleaning was successful.");
+		} catch (CouponSystemException e) {
+			System.out.println("faild to clean companies after test." + e.getMessage());
 		}
 		
-		
+		System.out.println();
+		System.out.println();
+		System.out.println("---------------------------------------------------------------------------------------");
+		System.out.println("---------------CUSTOMER RELATED FUNCTIONS----------------------");
 		//testing customer related methods.
 		 
-		 Customer cust = new Customer(1, "x", "xx");
-		 Customer cust2 = new Customer(2, "y", "yy");
-		 Customer cust3 = new Customer(3, "z", "zz");
-		 Customer cust4 = new Customer(4, "z", "zz");
+		 Customer cust = new Customer("x", "xx");
+		 Customer cust2 = new Customer("y", "yy");
+		 Customer cust3 = new Customer("z", "zz");
+		 Customer cust4 = new Customer("z", "zz");
 		 
 		 System.out.println();
 		 System.out.println("---------Check Customer Create and Get functions.----------");
@@ -155,7 +173,7 @@ public class TestAdminFacade {
 		}
 		
 		try {
-			System.out.println(admin.getCustomer(1));
+			System.out.println(admin.getCustomer(cust.getId()));
 		} catch (CouponSystemException e) {
 			System.out.println("faild to get customer(cust). " + e.getMessage());
 		}
@@ -177,7 +195,7 @@ public class TestAdminFacade {
 		
 		try {
 			System.out.println("Must get null cause searching for cust3, which was deleted.");
-			System.out.println(admin.getCustomer(3));
+			System.out.println(admin.getCustomer(cust3.getId()));
 		} catch (CouponSystemException e) {
 			System.out.println("faild to get the removed customer(cust3). " + e.getMessage());
 		}
@@ -194,7 +212,7 @@ public class TestAdminFacade {
 		}
 		
 		try {
-			System.out.println(admin.getCustomer(1));
+			System.out.println(admin.getCustomer(cust.getId()));
 		} catch (CouponSystemException e) {
 			System.out.println("faild to get customer. " + e.getMessage());
 		}
@@ -208,11 +226,12 @@ public class TestAdminFacade {
 		}
 		
 		try {
-			System.out.println(admin.getCustomer(2));
+			System.out.println(admin.getCustomer(cust2.getId()));
 		} catch (CouponSystemException e) {
-			System.out.println("faild to get customer. " + e.getMessage());
+			System.out.println("faild to get customer(cust2). " + e.getMessage());
 		}
-		
+		System.out.println();
+		System.out.println("Seeing the final result.");
 		try {
 			System.out.println(admin.getAllCustomers());//to see the final result
 		} catch (CouponSystemException e) {
@@ -220,12 +239,15 @@ public class TestAdminFacade {
 		}
 		
 		System.out.println();
-		System.out.println("---------Cleaning the Customer table with the Remove function for future testing.----------");
+		System.out.println("---------Cleaning the Customer table with the Remove customers function.----------");
 		try {
-			admin.removeCustomer(cust);
-			admin.removeCustomer(cust2);
-			admin.removeCustomer(cust3);
-			admin.removeCustomer(cust4);
+			ArrayList<Customer> customers = new ArrayList<Customer>();
+			customers.add(cust);
+			customers.add(cust2);
+			admin.removeCustomers(customers);
+			System.out.println(admin.getAllCustomers());
+			System.out.println("Customer table cleaning was successful.");
+			
 		} catch (CouponSystemException e) {
 			System.out.println("faild to remove customers. " + e.getMessage());
 

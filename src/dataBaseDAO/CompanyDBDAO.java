@@ -13,6 +13,7 @@ import beans.CouponType;
 import connections.ConnectionPool;
 import dataAccessObject.CompanyDAO;
 import exceptions.CouponSystemException;
+import exceptions.DatabaseDAOException;
 
 public class CompanyDBDAO implements CompanyDAO {
 
@@ -20,8 +21,9 @@ public class CompanyDBDAO implements CompanyDAO {
 
 	/**
 	 * Constructor of the company database data access object, which grants access to the C.R.U.D commands.
+	 * @throws CouponSystemException if there were issues during the connection pool creation.
 	 */
-	public CompanyDBDAO() {
+	public CompanyDBDAO() throws CouponSystemException {
 		super();
 		pool = ConnectionPool.getInstance();
 	}
@@ -33,16 +35,21 @@ public class CompanyDBDAO implements CompanyDAO {
 	@Override
 	public void createCompany(Company c) throws CouponSystemException {
 		Connection con = pool.getConnection();
-		String sql = "INSERT INTO company VALUES(?,?,?,?)";
+		String sql = "INSERT INTO company(comp_name,password,email) VALUES(?,?,?)";
 
-		try (PreparedStatement stmt = con.prepareStatement(sql)) {
-			stmt.setLong(1, c.getId());
-			stmt.setString(2, c.getCompName());
-			stmt.setString(3, c.getPassword());
-			stmt.setString(4, c.getEmail());
+		try (PreparedStatement stmt = con.prepareStatement(sql, PreparedStatement.RETURN_GENERATED_KEYS)) {
+			stmt.setString(1, c.getCompName());
+			stmt.setString(2, c.getPassword());
+			stmt.setString(3, c.getEmail());
 			stmt.executeUpdate();
+			
+			ResultSet rs = stmt.getGeneratedKeys();
+			rs.next();
+			long compId = rs.getLong(1);
+			c.setId(compId);
+			
 		} catch (SQLException e) {
-			throw new CouponSystemException("Error: Company creation failed. " + e.getMessage());
+			throw new DatabaseDAOException("Error: Company creation failed. " + e.getMessage());
 		} finally {
 			pool.returnConnection(con);
 
@@ -61,7 +68,7 @@ public class CompanyDBDAO implements CompanyDAO {
 		try (Statement stm = con.createStatement();) {
 			stm.execute(sql);
 		} catch (SQLException e) {
-			throw new CouponSystemException("Error: Company removal failed. " + e.getMessage());
+			throw new DatabaseDAOException("Error: Company removal failed. " + e.getMessage());
 		} finally {
 			pool.returnConnection(con);
 		}
@@ -83,7 +90,7 @@ public class CompanyDBDAO implements CompanyDAO {
 			stm.setLong(4, c.getId());
 			stm.executeUpdate();
 		} catch (SQLException e) {
-			throw new CouponSystemException("Error: Company update failed. " + e.getMessage());
+			throw new DatabaseDAOException("Error: Company update failed. " + e.getMessage());
 		} finally {
 			pool.returnConnection(con);
 		}
@@ -105,7 +112,7 @@ public class CompanyDBDAO implements CompanyDAO {
 				c = new Company(rs.getLong(1), rs.getString(2), rs.getString(3), rs.getString(4));
 			}
 		} catch (SQLException e) {
-			throw new CouponSystemException("Error: Getting company failed. " + e.getMessage());
+			throw new DatabaseDAOException("Error: Getting company failed. " + e.getMessage());
 		} finally {
 			pool.returnConnection(con);
 		}
@@ -127,7 +134,7 @@ public class CompanyDBDAO implements CompanyDAO {
 				compList.add(new Company(rs.getLong(1), rs.getString(2), rs.getString(3), rs.getString(4)));
 			}
 		} catch (SQLException e) {
-			throw new CouponSystemException("Error: Getting all companies failed. " + e.getMessage());
+			throw new DatabaseDAOException("Error: Getting all companies failed. " + e.getMessage());
 		} finally {
 			pool.returnConnection(con);
 		}
@@ -152,7 +159,7 @@ public class CompanyDBDAO implements CompanyDAO {
 						CouponType.valueOf(rs.getString(6)), rs.getString(7), rs.getDouble(8), rs.getString(9)));
 			}
 		} catch (SQLException e) {
-			throw new CouponSystemException("Error: Getting company's coupons failed. " + e.getMessage());
+			throw new DatabaseDAOException("Error: Getting company's coupons failed. " + e.getMessage());
 		} finally {
 			pool.returnConnection(con);
 		}
@@ -174,7 +181,7 @@ public class CompanyDBDAO implements CompanyDAO {
 				return true;
 			}
 		} catch (SQLException e) {
-			throw new CouponSystemException("Error: Company login failed. " + e.getMessage());
+			throw new DatabaseDAOException("Error: Company login failed. " + e.getMessage());
 		} finally {
 			pool.returnConnection(con);
 		}
@@ -201,7 +208,7 @@ public class CompanyDBDAO implements CompanyDAO {
 				return null;
 			}
 		} catch (SQLException e) {
-			throw new CouponSystemException("Error: Getting company failed. " + e.getMessage());
+			throw new DatabaseDAOException("Error: Getting company failed. " + e.getMessage());
 
 		} finally {
 			pool.returnConnection(con);
@@ -226,7 +233,7 @@ public class CompanyDBDAO implements CompanyDAO {
 			stmt.setLong(2, coup.getId());
 			stmt.executeUpdate();
 		} catch (SQLException e) {
-			throw new CouponSystemException("Error: Adding to company coupon failed. " + e.getMessage());
+			throw new DatabaseDAOException("Error: Adding to company coupon failed. " + e.getMessage());
 		} finally {
 			pool.returnConnection(con);
 
@@ -234,29 +241,4 @@ public class CompanyDBDAO implements CompanyDAO {
 
 	}
 
-	/**
-	 * Generates a new simple id for a newly created company.
-	 * 
-	 * @return a long that will be used as a new company id,
-	 * @throws CouponSystemException if there were issues during method runtime.
-	 */
-	public long getNewCompanyId() throws CouponSystemException {
-		Connection con = pool.getConnection();
-		String sql = "SELECT max(id) FROM company";
-		long id = 1;
-		
-		try (Statement stm = con.createStatement();) {
-			ResultSet rs = stm.executeQuery(sql);
-			if (rs.next()) {
-				id = rs.getLong("id") + 1;
-				return id;
-			}
-		} catch (SQLException e) {
-			throw new CouponSystemException("Error: Cannot get new company ID. " + e.getMessage());
-		}finally {
-			pool.returnConnection(con);			
-		}
-		return id;
-		
-	}
 }

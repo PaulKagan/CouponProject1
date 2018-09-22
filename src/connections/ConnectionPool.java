@@ -7,6 +7,8 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
 
+import exceptions.ConnectionPullException;
+import exceptions.CoupSysRuntimeException;
 import exceptions.CouponSystemException;
 
 /**
@@ -20,7 +22,8 @@ import exceptions.CouponSystemException;
 public class ConnectionPool {
 
 	private Set<Connection> pool = new HashSet<Connection>(); // collection of 10 connections.
-	private static ConnectionPool instance = new ConnectionPool();
+//	private Set<Connection> usedConnections = new HashSet<Connection>(); // collection of 10 connections.
+	private static ConnectionPool instance = null;
 	private static final int CON_MAX_NUM = 10;
 	private boolean active;
 
@@ -28,18 +31,18 @@ public class ConnectionPool {
 	 * The construction for this class is private to prevent creation of more
 	 * ConnectionPools. Make sure your data base is called CouponSystem1.
 	 * 
-	 * If connection could not be established, prints out a string that says so.
+//	 * @throws CouponSystemException If connection could not be established.
+	 * @throws ConnectionPullException 
 	 */
-	private ConnectionPool() {
+	private ConnectionPool() throws ConnectionPullException {
 		String url = "jdbc:derby://localhost/CouponSystem1;create=true";
-
 		// adding connections to the pool.
 		for (int i = 0; i < CON_MAX_NUM; i++) {
 			try {
 				Connection c = DriverManager.getConnection(url);
 				pool.add(c);
 			} catch (SQLException e) {
-				System.out.println("No conection to the server!" + e.getMessage());
+				throw new ConnectionPullException("No conection to the server!" + e.getMessage());
 			}
 
 		}
@@ -50,8 +53,12 @@ public class ConnectionPool {
 	/**
 	 * Gives an instance of the ConnectionPool, thus granting access to the pool.
 	 * @return the singleton instance of the class
+	 * @throws CouponSystemException if there were issues during method runtime.
 	 */
-	public static ConnectionPool getInstance() {
+	public static ConnectionPool getInstance() throws CouponSystemException {
+		if (instance == null) {
+			instance = new ConnectionPool();
+		} 
 		return instance;
 	}
 
@@ -60,7 +67,7 @@ public class ConnectionPool {
 	 * Gets a single connection from the pool.
 	 *  In case the pool is empty then the method will wait a connection is available.
 	 * @return a single connection from the pool.
-	 * @throws CouponSystemException if connection to the database wasn't available.
+	 * @throws CouponSystemException if connection to the database wasn't available or runtime error.
 	 */
 	public synchronized Connection getConnection() throws CouponSystemException {
 		if (!active) {
@@ -73,7 +80,7 @@ public class ConnectionPool {
 				try {
 					Thread.currentThread().wait();
 				} catch (InterruptedException e) {
-					continue;
+					throw new CoupSysRuntimeException("Connection pool thread interruption." + e.getMessage());
 				}
 			}
 			Iterator<Connection> iterator = pool.iterator();
@@ -93,9 +100,9 @@ public class ConnectionPool {
 	 */
 	public synchronized void returnConnection(Connection c) throws CouponSystemException {
 		if (!active) {
-			throw new CouponSystemException("Cannot return connection, the connection pool is inactive.");
+			throw new ConnectionPullException("Cannot return connection, the connection pool is inactive.");
 		} else if (pool.size() == CON_MAX_NUM) {
-			throw new CouponSystemException("Cannot return connection, the connection pool is full.");
+			throw new ConnectionPullException("Cannot return connection, the connection pool is full.");
 		} else {
 			pool.add(c);
 			notifyAll();
@@ -104,9 +111,9 @@ public class ConnectionPool {
 	}
 	
 	/**
-	 * Closes all the connections in the pool.
-	 * @throws CouponSystemException if the thread is interrupted 
-	 * or the connection to the database wasn't possible to establish
+	 * Closes all the connections in the pool, and forcefully closes connections in use.
+	 * @throws CouponSystemException on runtime error,
+	 * or the connection to the database was impossible to establish.
 	 */
 	public void closeAllConnections() throws CouponSystemException {
 		Iterator<Connection> iterator = pool.iterator();
@@ -116,7 +123,7 @@ public class ConnectionPool {
 				try {
 					Thread.currentThread().wait();
 				} catch (InterruptedException e) {
-					throw new CouponSystemException("shutdown interrupted. " + e.getMessage());
+					throw new CoupSysRuntimeException("shutdown interrupted. " + e.getMessage());
 				}
 			}
 			try {
@@ -129,7 +136,7 @@ public class ConnectionPool {
 					iterator.remove();
 				}
 			} catch (SQLException e) {
-				throw new CouponSystemException("There are no connections or an active one!" + e.getMessage());
+				throw new ConnectionPullException("There are no connections or an active one!" + e.getMessage());
 
 			}
 		}

@@ -4,6 +4,7 @@ package facade;
 import dataBaseDAO.CompanyDBDAO;
 import dataBaseDAO.CustomerDBDAO;
 import exceptions.CouponSystemException;
+import exceptions.FacadeException;
 
 public interface CouponClientFacade {
 	
@@ -49,7 +50,7 @@ public interface CouponClientFacade {
 			break;
 		}
 
-		throw new CouponSystemException("ERROR: Log-In failed. Details are incorrect.");
+		throw new FacadeException("ERROR: Log-In failed. Details are incorrect.");
 	}
 
 }

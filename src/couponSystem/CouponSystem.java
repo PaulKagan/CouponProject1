@@ -13,7 +13,7 @@ import facade.CouponClientFacade.ClientType;
  */
 public class CouponSystem {
 	
-	private static CouponSystem instance = new CouponSystem();
+	private static CouponSystem instance = null;
 	private DailyCouponExpirationTask DCET;
 	
 	/**
@@ -21,8 +21,9 @@ public class CouponSystem {
 	 * Starts the daily deletion of expired coupons.
 	 * The construction for this class is private to prevent creation of more
 	 * coupon systems.
+	 * @throws CouponSystemException if there were issues during the daily expiration task creation.
 	 */
-	private CouponSystem() {
+	private CouponSystem() throws CouponSystemException {
 		this.DCET = new DailyCouponExpirationTask();
 		Thread t1 = new Thread(DCET, "Daily coupon deletion thread");
 		t1.start();
@@ -33,8 +34,12 @@ public class CouponSystem {
 	/**
 	 * Gives an instance of the CouponSystem, thus granting access to the system.
 	 * @return the singleton instance of the class
+	 * @throws CouponSystemException if there were issues during the coupon systtem creation.
 	 */
-	public static CouponSystem getInstance() {
+	public static CouponSystem getInstance() throws CouponSystemException {
+		if(instance == null) {
+			instance = new CouponSystem();
+		}
 		return instance;
 	}
 	

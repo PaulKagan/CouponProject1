@@ -9,7 +9,7 @@ import exceptions.CouponSystemException;
 
 public class DailyCouponExpirationTask implements Runnable {
 	
-	private CouponDBDAO coupDBDAO = new CouponDBDAO();
+	private CouponDBDAO coupDBDAO = null;
 	private boolean quit = false;
 	
 	
@@ -18,9 +18,12 @@ public class DailyCouponExpirationTask implements Runnable {
 	/**
 	 * Generates a single object to be put into a thread to enable a single start.
 	 * 
+	 * @throws CouponSystemException if there were issues during the data access objects creation.
+	 * 
 	 */
-	public DailyCouponExpirationTask() {
+	public DailyCouponExpirationTask() throws CouponSystemException {
 		super();
+		coupDBDAO = new CouponDBDAO();
 	}
 
 

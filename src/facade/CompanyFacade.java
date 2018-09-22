@@ -8,6 +8,7 @@ import beans.CouponType;
 import dataBaseDAO.CompanyDBDAO;
 import dataBaseDAO.CouponDBDAO;
 import exceptions.CouponSystemException;
+import exceptions.FacadeException;
 
 public class CompanyFacade implements CouponClientFacade {
 	
@@ -19,8 +20,9 @@ public class CompanyFacade implements CouponClientFacade {
 	 * Constructor for the company facade.
 	 * 
 	 * @param comp is the company the facade associated with.
+	 * @throws CouponSystemException if there were issues during the data access objects creation.
 	 */
-	public CompanyFacade(Company comp){
+	public CompanyFacade(Company comp) throws CouponSystemException{
 		compDBDAO = new CompanyDBDAO();
 		coupDBDAO = new CouponDBDAO();
 		company = comp;
@@ -32,28 +34,54 @@ public class CompanyFacade implements CouponClientFacade {
 	 * Creates a new coupon for the company in the database coupon and company-coupon tables.
 	 * Only if the title isn't different
 	 * @param coup is the coupon to be added.
-	 * @throws CouponSystemException if there were issues during method runtime or if the name was already taken.
+	 * @throws CouponSystemException if there were issues during method runtime.
+	 * or if the name was already taken.
 	 */
 	public void createCoupon(Coupon coup) throws CouponSystemException {
 		if(coupDBDAO.getCouponByTitle(coup.getTitle())==null){
 			coupDBDAO.createCoupon(coup);
 			compDBDAO.addToCompanyCoupon(company, coup);
 		}else {
-			throw new CouponSystemException("Coupon title is already taken.");
+			throw new FacadeException("Error: Coupon title is already taken.");
 		}
-		
 	}
 	
 	/**
 	 * Removes a coupon of the company from the database coupon, customer-coupon and company-coupon tables.
 	 * 
 	 * @param coup is the coupon to be removed.
-	 * @throws CouponSystemException if there were issues during method runtime.
+	 * @throws CouponSystemException if there were issues during method runtime,
+	 * or if no such coupon exists.
 	 */
 	public void removeCoupon(Coupon coup) throws CouponSystemException {
-		coupDBDAO.removeCustomerCoupon(coup);
-		coupDBDAO.removeCompanyCoupon(coup);
-		coupDBDAO.removeCoupon(coup);
+		if(coupDBDAO.getCoupon(coup.getId()) != null) {
+			coupDBDAO.removeCustomerCoupon(coup);
+			coupDBDAO.removeCompanyCoupon(coup);
+			coupDBDAO.removeCoupon(coup);	
+		} else {
+			throw new FacadeException("Error: No such coupon exists.");
+		}
+		
+	}
+	
+	/**
+	 * Removes a coupon list of the company from the database coupon, customer-coupon and company-coupon tables.
+	 * 
+	 * @param coupons is the coupon list to be removed.
+	 * @throws CouponSystemException if there were issues during method runtime,
+	 * or if a coupon not exists.
+	 */
+	public void removeCouponS(ArrayList<Coupon> coupons) throws CouponSystemException {
+		for (Coupon coup : coupons) {
+			if(coupDBDAO.getCoupon(coup.getId()) != null) {
+				coupDBDAO.removeCustomerCoupon(coup);
+				coupDBDAO.removeCompanyCoupon(coup);
+				coupDBDAO.removeCoupon(coup);	
+			} else {
+				throw new FacadeException("Error: No such coupon exists.");
+			}
+			
+		}
 		
 	}
 	
@@ -66,13 +94,14 @@ public class CompanyFacade implements CouponClientFacade {
 	 */
 	public void updateCoupon(Coupon coup) throws CouponSystemException {
 		Coupon c = coupDBDAO.getCoupon(coup.getId());
-		if(c.getTitle().equals(coup.getTitle()) && c.getStartDate().toLocalDate().compareTo(coup.getStartDate().toLocalDate()) == 0
+		if(c.getTitle().equals(coup.getTitle())
+				&& c.getStartDate().toLocalDate().compareTo(coup.getStartDate().toLocalDate()) == 0
 				&& c.getAmount() == coup.getAmount() && c.getType() == coup.getType()
 				&& c.getMessage().equals(coup.getMessage()) && c.getImage().equals(coup.getImage())){			
 			
 			coupDBDAO.updateCoupon(coup);
 		}else {
-			throw new CouponSystemException("Error: Cannot update coupon.");
+			throw new FacadeException("Error: Cannot update coupon.");
 		}
 		
 	}
@@ -136,7 +165,7 @@ public class CompanyFacade implements CouponClientFacade {
 		}
 		
 		
-		return coupDBDAO.getAllCouponsByParameters(company, title, startDate, endDate, amount, type, price);
+		return coupDBDAO.getAllOwnedCouponsByParameters(company, title, startDate, endDate, amount, type, price);
 	}
 	
 	

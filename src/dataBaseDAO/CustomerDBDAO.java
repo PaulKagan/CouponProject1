@@ -12,12 +12,18 @@ import beans.Customer;
 import connections.ConnectionPool;
 import dataAccessObject.CustomerDAO;
 import exceptions.CouponSystemException;
+import exceptions.DatabaseDAOException;
 
 public class CustomerDBDAO implements CustomerDAO {
 
 	ConnectionPool pool;
 
-	public CustomerDBDAO() {
+	/**
+	 * Constructor of the customer database data access object, which grants access to the C.R.U.D commands.
+	 * 
+	 * @throws CouponSystemException if there were issues during the connection pool creation.
+	 */
+	public CustomerDBDAO() throws CouponSystemException {
 		super();
 		pool = ConnectionPool.getInstance();
 	}
@@ -28,15 +34,20 @@ public class CustomerDBDAO implements CustomerDAO {
 	@Override
 	public void createCustomer(Customer c) throws CouponSystemException {
 		Connection con = pool.getConnection();
-		String sql = "INSERT INTO Customer VALUES(?,?,?)";
+		String sql = "INSERT INTO Customer (cust_name,password) VALUES(?,?)";
 
-		try (PreparedStatement stmt = con.prepareStatement(sql)) {
-			stmt.setLong(1, c.getId());
-			stmt.setString(2, c.getCustName());
-			stmt.setString(3, c.getPassword());
+		try (PreparedStatement stmt = con.prepareStatement(sql, PreparedStatement.RETURN_GENERATED_KEYS)) {
+			stmt.setString(1, c.getCustName());
+			stmt.setString(2, c.getPassword());
 			stmt.executeUpdate();
+			
+			ResultSet rs = stmt.getGeneratedKeys();
+			rs.next();
+			long custId = rs.getLong(1);
+			c.setId(custId);
+			
 		} catch (SQLException e) {
-			throw new CouponSystemException("Error: Customer creation failed. " + e.getMessage());
+			throw new DatabaseDAOException("Error: Customer creation failed. " + e.getMessage());
 		}finally {
 			pool.returnConnection(con);			
 		}
@@ -54,7 +65,7 @@ public class CustomerDBDAO implements CustomerDAO {
 		try (Statement stm = con.createStatement();) {
 			stm.execute(sql);
 		} catch (SQLException e) {
-			throw new CouponSystemException("Error: Customer deletion failed. " + e.getMessage());
+			throw new DatabaseDAOException("Error: Customer deletion failed. " + e.getMessage());
 		}finally {
 			pool.returnConnection(con);			
 		}
@@ -75,7 +86,7 @@ public class CustomerDBDAO implements CustomerDAO {
 			stm.setLong(3, c.getId());
 			stm.executeUpdate();
 		} catch (SQLException e) {
-			throw new CouponSystemException("Error: Customer update failed. " + e.getMessage());
+			throw new DatabaseDAOException("Error: Customer update failed. " + e.getMessage());
 		}finally {
 			pool.returnConnection(con);			
 		}
@@ -96,7 +107,7 @@ public class CustomerDBDAO implements CustomerDAO {
 				c = new Customer(rs.getLong(1), rs.getString(2), rs.getString(3));
 			}
 		} catch (SQLException e) {
-			throw new CouponSystemException("Error: Getting customer failed. " + e.getMessage());
+			throw new DatabaseDAOException("Error: Getting customer failed. " + e.getMessage());
 		}finally {
 			pool.returnConnection(con);			
 		}
@@ -120,7 +131,7 @@ public class CustomerDBDAO implements CustomerDAO {
 			}
 
 		} catch (SQLException e) {
-			throw new CouponSystemException("Error: Getting all customers failed. " + e.getMessage());
+			throw new DatabaseDAOException("Error: Getting all customers failed. " + e.getMessage());
 		}finally {
 			pool.returnConnection(con);			
 		}
@@ -145,7 +156,7 @@ public class CustomerDBDAO implements CustomerDAO {
 			}
 
 		} catch (SQLException e) {
-			throw new CouponSystemException("Error: Getting customer's coupons failed. " + e.getMessage());
+			throw new DatabaseDAOException("Error: Getting customer's coupons failed. " + e.getMessage());
 		}finally {
 			pool.returnConnection(con);			
 		}
@@ -168,7 +179,7 @@ public class CustomerDBDAO implements CustomerDAO {
 				return true;
 			}
 		} catch (SQLException e) {
-			throw new CouponSystemException("Error: Login failed. " + e.getMessage());
+			throw new DatabaseDAOException("Error: Login failed. " + e.getMessage());
 		} finally {
 			pool.returnConnection(con);
 		}
@@ -195,7 +206,7 @@ public class CustomerDBDAO implements CustomerDAO {
 				return null;
 			}
 		} catch (SQLException e) {
-			throw new CouponSystemException("Error: Getting company failed. " + e.getMessage());
+			throw new DatabaseDAOException("Error: Getting company failed. " + e.getMessage());
 		} finally {
 			pool.returnConnection(con);
 		}
@@ -218,37 +229,13 @@ public class CustomerDBDAO implements CustomerDAO {
 			stmt.setLong(2, coup.getId());
 			stmt.executeUpdate();
 		} catch (SQLException e) {
-			throw new CouponSystemException("Error: Customer creation failed. " + e.getMessage());
+			throw new DatabaseDAOException("Error: Customer creation failed. " + e.getMessage());
 		} finally {
 			pool.returnConnection(con);
 		}
 
 	}
 	
-	/**
-	 * Generates a new simple id for a newly created customer.
-	 * 
-	 * @return a long that will be used as a new customer id,
-	 * @throws CouponSystemException if there were issues during method runtime.
-	 */
-	public long getNewCustomerId() throws CouponSystemException {
-		Connection con = pool.getConnection();
-		String sql = "SELECT max(id) FROM customer";
-		long id = 1;
-		
-		try (Statement stm = con.createStatement();) {
-			ResultSet rs = stm.executeQuery(sql);
-			if (rs.next()) {
-				id = rs.getLong("id") + 1;
-				return id;
-			}
-		} catch (SQLException e) {
-			throw new CouponSystemException("Error: Getting new customer ID. " + e.getMessage());
-		}finally {
-			pool.returnConnection(con);			
-		}
-		return id;
-		
-	}
+
 
 }
